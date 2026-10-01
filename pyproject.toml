@@ -1,0 +1,78 @@
+[project]
+name = "duramem"
+version = "0.1.0"
+description = "Duramem — 挂载式 LLM 记忆服务：切片即记忆，同时作为原文索引"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "sqlite-vec>=0.1.9",
+    "jieba>=0.42.1",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+    "pydantic>=2.6",
+    "mcp>=1.0",
+    "zstandard>=0.22",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[project.scripts]
+duramem = "duramem.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["duramem*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+# ---------------------------------------------------------------- 静态检查门禁
+# 本地：.venv/Scripts/ruff.exe check duramem tests scripts && .venv/Scripts/mypy.exe duramem
+# CI：.github/workflows/ci.yml 同一套命令；提交前先在本地跑绿。
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["frontend"]
+
+[tool.ruff.lint]
+# E/F/W：pycodestyle+pyflakes 基础面；I：import 排序；UP：升级到当前语法；
+# B：常见 bug 模式（可变默认值、除零隐患等）。SIM/RUF 观察后再收。
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# 测试与脚本的超长行多是中文断言消息 / 演示数据，折行反而伤可读性；产品代码保持 100。
+"tests/*" = ["E501"]
+"scripts/*" = ["E501"]
+# transcripts 的 add() 闭包刻意捕获会话级状态（含 nonlocal window），只在当前
+# 会话的同步流程里被调用、不跨迭代存活——B023 担心的晚绑定场景不存在。
+"duramem/importers/transcripts.py" = ["B023"]
+
+[tool.ruff.lint.isort]
+# "from duramem import X" 与 "from duramem.active_db import Y" 保持分行，
+# 不合并同模块导入——service.py 的 ACTIVE_FILE 再导出带着 noqa 注释。
+force-single-line = false
+
+[tool.mypy]
+python_version = "3.10"
+files = ["duramem"]
+# sqlite_vec / jieba 等无类型标记的第三方包：按 Any 处理，不挡门禁
+ignore_missing_imports = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+# 首轮门禁先收这些；disallow_untyped_defs 等严格项等存量清零再开
+warn_unused_ignores = false
+exclude = ["__pycache__"]

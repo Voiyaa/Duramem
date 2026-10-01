@@ -1,0 +1,227 @@
+@import "tailwindcss";
+@import "./styles/surfaces.css";
+@import "./styles/fields.css";
+@import "./styles/buttons.css";
+@import "./styles/data.css";
+@import "./styles/markdown.css";
+
+/* 让 dark: 变体跟随 html[data-theme] 而不是系统偏好；
+   大多数地方靠下面的调色板翻转自动适配，dark: 只作个别特例的逃生口。 */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme {
+  --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", "PingFang SC", "Microsoft YaHei UI",
+    "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, ui-monospace, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  /* 默认的 slate-500/600 在近黑底上对比度只有约 4.2 / 2.4，小号中文提示会糊成一片。
+     提亮到约 4.6 / 3.3；700 以上只用作边框和底色，保持默认。 */
+  --color-slate-500: #6f819c;
+  --color-slate-600: #57698a;
+
+  --color-ink-950: #070b14;
+  --color-ink-900: #0b111d;
+
+  --animate-fade-up: dm-fade-up 0.24s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes dm-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* ======================================================================
+   白昼模式的调色板语义翻转。
+   全项目的工具类都按深色语义书写（数字越大越亮 = 越强调、white-α 当分隔线），
+   这里在浅色下把整套变量翻转成"越深越强调"，所有工具类无需逐处写变体
+   就能自动得到正确的对比度。slate-50 之类的名字在浅色下指"最强调的文字"。
+   ====================================================================== */
+[data-theme='light'] {
+  /* white-α 工具类（分隔线、悬停底色、描边）翻转为墨色-α */
+  --color-white: #0f172a;
+
+  /* 中性色：深浅互换，保持层级关系 */
+  --color-slate-50: #0f172a;
+  --color-slate-100: #1e293b;
+  --color-slate-200: #334155;
+  --color-slate-300: #475569;
+  --color-slate-400: #566a84;
+  --color-slate-500: #64748b;
+  --color-slate-600: #7e8da2;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+  --color-slate-950: #f8fafc;
+  --color-ink-900: #f2f5fa;
+  --color-ink-950: #fbfcfe;
+
+  /* 强调色：深色里的 50/100/200/300 级浅字换成浅色里可读的深字；
+     400 级只用作圆点、淡底和描边，保持不变 */
+  --color-sky-50: #0c4a6e;
+  --color-sky-100: #075985;
+  --color-sky-200: #0369a1;
+  --color-sky-300: #0284c7;
+  --color-sky-950: #f0f9ff;
+  --color-cyan-300: #0e7490;
+  --color-emerald-50: #064e3b;
+  --color-emerald-100: #065f46;
+  --color-emerald-300: #059669;
+  --color-amber-50: #78350f;
+  --color-amber-200: #92400e;
+  --color-amber-300: #b45309;
+  --color-rose-50: #881337;
+  --color-rose-100: #9f1239;
+  --color-rose-200: #be123c;
+  --color-rose-300: #e11d48;
+  --color-violet-50: #4c1d95;
+  --color-violet-200: #6d28d9;
+  --color-violet-300: #7c3aed;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    accent-color: #0ea5e9;
+  }
+
+  [data-theme='light'] {
+    color-scheme: light;
+    accent-color: #0ea5e9;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: #070b14;
+    color: #e2e8f0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  [data-theme='light'] body {
+    background-color: #f4f6fa;
+    color: #1e293b;
+  }
+
+  ::selection {
+    background-color: rgba(56, 189, 248, 0.3);
+    color: #f8fafc;
+  }
+
+  [data-theme='light'] ::selection {
+    background-color: rgba(14, 165, 233, 0.2);
+    color: #0f172a;
+  }
+
+  :focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+  }
+
+  [data-theme='light'] :focus-visible {
+    outline-color: #0284c7;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp,
+  .mono {
+    font-family: var(--font-mono);
+  }
+
+  :where(:not(pre)) > code {
+    padding: 0.08em 0.38em;
+    border-radius: 0.3rem;
+    background-color: rgba(148, 163, 184, 0.12);
+    font-size: 0.92em;
+  }
+
+  [data-theme='light'] :where(:not(pre)) > code {
+    background-color: rgba(14, 165, 233, 0.08);
+    color: #0c4a6e;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"] {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* 10px 的轨道配 3px 透明边：看上去是 4px 细条，鼠标却好抓 */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-color: rgba(148, 163, 184, 0.18);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.32);
+  }
+
+  [data-theme='light'] ::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.22);
+  }
+
+  [data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.38);
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+    }
+
+    [data-theme='light'] * {
+      scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

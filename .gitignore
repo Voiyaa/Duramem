@@ -1,0 +1,43 @@
+# 运行数据 —— 记忆库就在这里，绝对不要提交
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# 环境
+.env
+.env.local
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+
+# 界面审查截图（本地证据，不入库）
+.ui-review/
+.demo-data/
+
+# 导出与临时产物
+*-export.json
+*.snapshot.db
+.research_*.py
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+# 本地开发文档（不入库）
+初步文档.txt
+Duramem-设计文档-v2.md

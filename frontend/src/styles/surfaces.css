@@ -1,0 +1,178 @@
+/* 背景、卡片、面板、菜单：界面里所有"承载内容的面"。 */
+
+@keyframes dm-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer components {
+  /* 固定在视口：内容滚动时极光和点阵不跟着动 */
+  .dm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(62rem 34rem at 92% -14%, rgba(56, 189, 248, 0.12), transparent 62%),
+      radial-gradient(48rem 30rem at 4% -10%, rgba(139, 92, 246, 0.1), transparent 60%),
+      radial-gradient(56rem 36rem at 55% 120%, rgba(34, 211, 238, 0.05), transparent 60%);
+  }
+  .dm-backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(180deg, #000, transparent 70%);
+  }
+
+  [data-theme='light'] .dm-backdrop {
+    background:
+      radial-gradient(62rem 34rem at 92% -14%, rgba(14, 165, 233, 0.08), transparent 62%),
+      radial-gradient(48rem 30rem at 4% -10%, rgba(99, 102, 241, 0.05), transparent 60%),
+      radial-gradient(56rem 36rem at 55% 120%, rgba(14, 165, 233, 0.04), transparent 60%),
+      linear-gradient(180deg, rgba(244, 246, 250, 0.5), rgba(238, 242, 247, 0.65));
+  }
+  [data-theme='light'] .dm-backdrop::after {
+    background-image: radial-gradient(rgba(100, 116, 139, 0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .dm-card {
+    position: relative;
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 0.875rem;
+    background: linear-gradient(180deg, rgba(20, 28, 46, 0.74), rgba(11, 17, 29, 0.7));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 18px 40px -24px rgba(0, 0, 0, 0.8);
+  }
+  .dm-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem 0.75rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  }
+  .dm-card-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    padding: 1rem;
+  }
+
+  [data-theme='light'] .dm-card {
+    border-color: rgba(148, 163, 184, 0.28);
+    background: #ffffff;
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 10px 28px -18px rgba(15, 23, 42, 0.12);
+  }
+  [data-theme='light'] .dm-card-header {
+    border-bottom-color: rgba(148, 163, 184, 0.2);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.7), transparent);
+  }
+
+  .dm-panel {
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 0.625rem;
+    background-color: rgba(5, 8, 15, 0.55);
+  }
+
+  [data-theme='light'] .dm-panel {
+    border-color: rgba(148, 163, 184, 0.24);
+    background: #f8fafc;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  }
+
+  .dm-menu {
+    position: fixed;
+    z-index: 60;
+    min-width: 13.5rem;
+    max-width: 19rem;
+    padding: 0.3125rem;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 0.75rem;
+    background-color: rgba(13, 19, 33, 0.96);
+    box-shadow:
+      0 24px 48px -12px rgba(0, 0, 0, 0.85),
+      0 0 0 1px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(14px);
+    animation: dm-menu-in 0.12s ease-out;
+  }
+  .dm-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.4375rem 0.5rem;
+    border-radius: 0.5rem;
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .dm-menu-item:hover:not(:disabled),
+  .dm-menu-item:focus-visible {
+    outline: none;
+    background-color: rgba(148, 163, 184, 0.1);
+  }
+  .dm-menu-item[data-danger] {
+    color: #fda4af;
+  }
+  .dm-menu-item[data-danger]:hover:not(:disabled),
+  .dm-menu-item[data-danger]:focus-visible {
+    background-color: rgba(244, 63, 94, 0.12);
+    color: #ffe4e6;
+  }
+  .dm-menu-item:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+  .dm-menu-sep {
+    height: 1px;
+    margin: 0.3125rem 0.375rem;
+    background-color: rgba(148, 163, 184, 0.1);
+  }
+
+  [data-theme='light'] .dm-menu {
+    border-color: rgba(226, 232, 240, 0.8);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow:
+      0 12px 32px -8px rgba(0, 0, 0, 0.08),
+      0 4px 12px -4px rgba(0, 0, 0, 0.04),
+      0 0 0 1px rgba(226, 232, 240, 0.5);
+    backdrop-filter: blur(12px);
+  }
+  [data-theme='light'] .dm-menu-item {
+    color: #4a5568;
+  }
+  [data-theme='light'] .dm-menu-item:hover:not(:disabled),
+  [data-theme='light'] .dm-menu-item:focus-visible {
+    background: rgba(14, 165, 233, 0.08);
+    color: #0f172a;
+  }
+  [data-theme='light'] .dm-menu-item[data-danger] {
+    color: #e11d48;
+  }
+  [data-theme='light'] .dm-menu-item[data-danger]:hover:not(:disabled),
+  [data-theme='light'] .dm-menu-item[data-danger]:focus-visible {
+    background-color: rgba(244, 63, 94, 0.1);
+    color: #be123c;
+  }
+  [data-theme='light'] .dm-menu-sep {
+    background-color: rgba(100, 116, 139, 0.15);
+  }
+}

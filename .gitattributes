@@ -1,0 +1,9 @@
+# 行尾策略：仓库内存 LF，检出按平台。
+# *.bat 是 GBK 编码且必须 CRLF——cmd.exe 对 LF 支持不稳，且这两个文件
+# 是给用户双击的（见设计文档 A.8），行尾被改坏等于一键启动直接失效。
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.svg binary
+*.ico binary

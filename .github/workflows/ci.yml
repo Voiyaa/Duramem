@@ -1,0 +1,42 @@
+name: CI
+
+# 三道门禁与本地 check.bat 完全一致（ruff → mypy → pytest）。
+# 提交前先在本地把 check.bat 跑绿，别依赖 CI 当第一道闸。
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 覆盖声明的最低版本（pyproject requires-python >= 3.10）与当前开发版本
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: 安装（含开发依赖：ruff / mypy / pytest）
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: ruff（风格、import 排序、升级语法、常见 bug 模式）
+        run: ruff check duramem tests scripts
+
+      - name: mypy（跨模块类型检查）
+        run: mypy duramem
+
+      - name: pytest（全量离线测试）
+        # 测试不需要 API Key、不访问模型接口——确定性实现保证这点（见 AGENTS.md）
+        # 必须与 check.bat 同一调用方式（python -m pytest）：裸 pytest 不把仓库根
+        # 放进 sys.path，tests/ 里的导入会收集失败——CI 曾因此整批红过（见 PROGRESS）
+        run: python -m pytest -q
