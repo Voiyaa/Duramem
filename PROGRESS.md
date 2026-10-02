@@ -4,12 +4,37 @@
 
 ## 当前状态
 
-v3 三级分层（L0/L1/L2）完成，**425 测试全绿**（离线），`check.bat` 三道门禁
+v3 三级分层（L0/L1/L2）完成，**434 测试全绿**（离线），`check.bat` 三道门禁
 （ruff + mypy + pytest）全绿。核心链路已闭环：
 采集（hook / 历史导入 / 网关）→ 总结（切片 + 会话概览）→ 检索（RRF + 可选重排）
 → 回查（L2 三模式 + L1 两档）→ 管理（前端 6 页 + CLI + MCP）→ **归档导出/导入往返**。
 
 ## 最近变更
+
+### 2026-10-02 测试分词快照隔离 + start.bat 就绪轮询（设计文档 A.18）
+
+- **测试分词隔离**：jieba 词典每进程只建一次（实测首次构建 615–627ms）。conftest
+  autouse 夹具从"每用例前后 reset、下次全量重建（614ms）"改为基线快照/恢复
+  （10.0ms/次）；快照覆盖 FREQ（含前缀占位）/ total / user_word_tag_tab /
+  _dynamic / finalseg.Force_Split_Words（后两者防御性纳入），恢复原地写回保持
+  dict/set 对象身份；基线须显式 `initialize()` 后再快照（Tokenizer 懒加载，
+  否则快照到空词典）。生产 `duramem/` 零改动，reset 契约原样
+- **实测**：分词相关用例同机 A/B 102 项 54.74s → **11.63s**（4.7x，省 43.1s）。
+  否掉"全局 jieba.dt + del_word 假隔离"：del_word = add_word(word, 0)，
+  total 不复原、FREQ=0 前缀占位残留、Force_Split_Words 永久污染（A.18 有源码级论证）
+- **start.bat**：`ping -n 7` 固定等待 → netstat/findstr 精确端口 LISTENING 轮询
+  （最多 30 次探测、29 个 ping -n 2 间隔，早就绪即开、超时仍照原样打开）；
+  字节差异 +12/-1 行，段外字节原样、GBK 无 BOM、CRCRLF 混合行尾逐行保留
+  （字节级核实）；`stop.bat` 未动。git diff 显示整文件改写是 autocrlf 显示失真，
+  以字节比对为准
+- **测试**：新增 `test_segmenter_isolation.py` 3 项（漂移不泄漏 / 干净词典 /
+  生产 reset 契约）；`test_start_bat.py` 6 项（2 静态跨平台 + 4 Windows 动态；
+  静态断言去空白整行匹配防注释满足；动态测试抽取真实等待段，真实
+  cmd/netstat/findstr/ping + 临时 socket，非完整脚本起停）
+- **门禁**：完整 `check.bat` exit=0（约 115s）：ruff（duramem/tests/scripts）
+  全绿、mypy 45 文件零问题、**pytest 434 passed**（112.62s）
+- **验证边界（如实记）**：未真实启动项目服务 / 浏览器、未触真实 `data/`，
+  人工起停验收未做，不称 A.18 验收全部完成
 
 ### 2026-09-29 冷启动 12.6 秒：SSL 上下文重复构造（设计文档 A.17）
 

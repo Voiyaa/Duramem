@@ -9,18 +9,81 @@
 from __future__ import annotations
 
 import pytest
+from jieba import finalseg
 
 from duramem.config import Settings
 from duramem.models import Message
 from duramem.service import Service
-from duramem.text.tokenize import reset_segmenter
+from duramem.text import tokenize
+from duramem.text.tokenize import Segmenter, get_segmenter
+
+# ====================================================================== 分词隔离
+# 进程内只建一次基线 Segmenter，每个用例前后恢复快照：内容级隔离（词典与全新
+# 实例一致）但不重复重建词典。生产 reset_segmenter() 契约不变；隔离语义由
+# tests/test_segmenter_isolation.py 锁定。
+
+# (FREQ, total, user_word_tag_tab, _dynamic, finalseg.Force_Split_Words)
+_SegmenterSnapshot = tuple[dict[str, int], float, dict[str, str], set[str], set[str]]
+
+
+def _snapshot_segmenter(seg: Segmenter) -> _SegmenterSnapshot:
+    """抓取分词注册涉及的状态（测试用）。
+
+    - `_tk.FREQ`：add_word 给词的每个前缀补 FREQ=0 占位（jieba/__init__.py:432-435），
+      get_DAG 靠 `frag not in FREQ` 提前断开，占位不能残留
+    - `_tk.total`：add_word 按 freq 累加，log(total) 是分词归一化基准
+    - `_tk.user_word_tag_tab`：add_word 带 tag 时写入；现实现不传 tag，防御性纳入
+    - `_dynamic`：已注册的受保护 token 集
+    - `finalseg.Force_Split_Words`：模块级集合，只有 add 没 remove；
+      del_word（= add_word(freq=0)，:436-437）会把词永久塞进去，防御性纳入
+    """
+    return (
+        dict(seg._tk.FREQ),
+        seg._tk.total,
+        dict(seg._tk.user_word_tag_tab),
+        set(seg._dynamic),
+        set(finalseg.Force_Split_Words),
+    )
+
+
+def _restore_segmenter(seg: Segmenter, snap: _SegmenterSnapshot) -> None:
+    """把快照原样写回 Segmenter（clear+update 保持 dict/set 对象身份不变）。"""
+    freq, total, tag_tab, dynamic, force_split = snap
+    seg._tk.FREQ.clear()
+    seg._tk.FREQ.update(freq)
+    seg._tk.total = total
+    seg._tk.user_word_tag_tab.clear()
+    seg._tk.user_word_tag_tab.update(tag_tab)
+    seg._dynamic.clear()
+    seg._dynamic.update(dynamic)
+    finalseg.Force_Split_Words.clear()
+    finalseg.Force_Split_Words.update(force_split)
+
+
+# (基线 Segmenter, 基线快照)。jieba.Tokenizer 懒加载：首次分词才构建词典，
+# 基线必须显式 initialize() 后再快照，否则快照到的是空词典。
+_segmenter_baseline: tuple[Segmenter, _SegmenterSnapshot] | None = None
+
+
+def _baseline_segmenter() -> tuple[Segmenter, _SegmenterSnapshot]:
+    global _segmenter_baseline
+    if _segmenter_baseline is None:
+        seg = get_segmenter()
+        seg._tk.initialize()
+        _segmenter_baseline = (seg, _snapshot_segmenter(seg))
+    return _segmenter_baseline
 
 
 @pytest.fixture(autouse=True)
 def _clean_segmenter():
-    reset_segmenter()
+    """每个用例前后把分词器恢复成基线：上一用例注册的动态 token、词频漂移不泄漏。
+    用例中途调用生产 reset_segmenter() 照常生效（置 None、下次重建），夹具收尾兜底还原。"""
+    seg, snap = _baseline_segmenter()
+    _restore_segmenter(seg, snap)
+    tokenize._segmenter = seg
     yield
-    reset_segmenter()
+    _restore_segmenter(seg, snap)
+    tokenize._segmenter = seg
 
 
 @pytest.fixture
